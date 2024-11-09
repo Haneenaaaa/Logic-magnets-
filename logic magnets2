@@ -1,0 +1,178 @@
+from collections import deque
+
+
+import pygame   # type: ignore
+import random  
+import sys  
+
+pygame.init()  
+
+ 
+width = 400  
+height = 500  
+RED = (255, 0, 0)  
+BLUE = (0, 0, 255)  
+IRON_COLOR = (169, 169, 169)  
+WHITE = (255, 255, 255)  
+
+ 
+gaps = {  
+    'gap1': [60, 180],  
+    'gap2': [140, 180],  
+    'gap3': [215, 180],  
+    'gap4': [60, 260],  
+    'gap5': [140, 260],  
+    'gap6': [215, 260],  
+    'gap7': [60, 340],  
+    'gap8': [140, 340],  
+    'gap9': [215, 340],  
+}  
+
+magnets = [[260, 220, 'red'], [100, 220, 'blue'], [100, 380, 'iron'] ,[180,220,'iron']]  
+move_speed = 1  
+speed=0.3
+  
+graph = {  
+    'gap1': ['gap2', 'gap4'],  
+    'gap2': ['gap1', 'gap3', 'gap5'],  
+    'gap3': ['gap2', 'gap6'],  
+    'gap4': ['gap1', 'gap5', 'gap7'],  
+    'gap5': ['gap4', 'gap2', 'gap6', 'gap8'],  
+    'gap6': ['gap5', 'gap3', 'gap9'],  
+    'gap7': ['gap4', 'gap8'],  
+    'gap8': ['gap7', 'gap5', 'gap9'],  
+    'gap9': ['gap6', 'gap8'],  
+}  
+
+ 
+def draw_gaps():  
+    for gap in gaps.values():  
+        pygame.draw.rect(screen, WHITE, (gap[0], gap[1], 80, 80), 3)  
+        #  pygame.draw.rect(screen, WHITE, (gap1[0], gap1[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap2[0], gap2[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap3[0], gap3[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap4[0], gap4[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap5[0], gap5[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap6[0], gap6[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap7[0], gap7[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap8[0], gap8[1],80,80), 3)
+        #  pygame.draw.rect(screen, WHITE, (gap9[0], gap9[1],80,80), 3)
+
+def draw_magnets():  
+    for magnet in magnets:  
+        color = RED if magnet[2] == 'red' else BLUE if magnet[2] == 'blue' else IRON_COLOR  
+        pygame.draw.circle(screen, color, (magnet[0], magnet[1]),30 )  
+
+  
+def dfs(cur_gap, visited):  
+    if cur_gap not in visited:  
+        visited.add(cur_gap)  
+        gap = gaps[cur_gap]  
+
+        
+        for magnet in magnets:  
+            if magnet[0] == gap[0] and magnet[1] == gap[1]:  
+                print(f"Moving magnet {magnet[2]} to gap {cur_gap}")  
+                move_magnet(magnets.index(magnet), 0, -0.1)  
+
+        for bor in graph[cur_gap]:  
+            dfs(bor, visited)  
+
+
+ 
+def bfs(start_gap):  
+    visited = set()    
+    queue = deque([start_gap])  
+    visited.add(start_gap) 
+
+    while queue:  
+        current_gap = queue.popleft()   
+        gap_position = gaps[current_gap]  
+
+          
+        for magnet in magnets:  
+            if magnet[0] == gap_position[0] and magnet[1] == gap_position[1]:  
+                print(f"Moving magnet {magnet[2]} to gap {current_gap}")  
+                move_magnet(magnets.index(magnet), 0, -10)  
+
+       
+        for neighbor in graph[current_gap]:  
+            if neighbor not in visited:  
+                visited.add(neighbor)  
+                queue.append(neighbor)
+
+
+def move_magnet(index, dx, dy):  
+    
+ 
+    x, y, color = magnets[index]  
+    newx = x + dx * speed  
+    newy = y + dy * move_speed  
+
+    
+    
+    if newx > width - 140: 
+        newx = width - 140  
+
+    
+    if newy > height - 120:   
+        newy = height - 120  
+
+    magnets[index] = (newx, newy, color)
+    # x, y, color = magnets[index]  
+    # magnets[index] = (x + dx * move_speed, y + dy * move_speed, color) 
+    # visited_gaps = set()  
+    # dfs('gap1', visited_gaps)  # Start DFS from gap1  
+    # bfs('gap1')                       
+# Main game loop  
+screen = pygame.display.set_mode((width, height))  
+running = True  
+
+while running:  
+    for event in pygame.event.get():  
+        if event.type == pygame.QUIT:  
+            pygame.quit()  
+            sys.exit()
+            #     keys = pygame.key.get_pressed()
+#     if keys[pygame.K_LEFT]:
+#             move_magnet(1, -0.1, 0)
+#             movblue() 
+#            # magnet(2, 0.1, 0)
+#     if keys[pygame.K_RIGHT]:
+#             move_magnet(1, 0.1, 0) 
+#           #  magnet(2, -0.1, 0)
+#     if keys[pygame.K_UP]:
+#             move_magnet(0, 0, -0.1)
+#            # magnet(2, 0, 0.1)
+#     if keys[pygame.K_DOWN]:
+#             move_magnet(0, 0, 0.1)
+#             magnet(2, 0, -0.1)  
+        if event.type == pygame.KEYDOWN:  
+            if event.key == pygame.K_SPACE:  # Trigger DFS on space bar press  
+                print("Starting DFS from gap1")  
+                visited_gaps = set()  # Clear previously visited gaps  
+                dfs('gap3', visited_gaps)  # Start DFS from gap1  
+                bfs('gap1')
+
+    mouseinterval=2000
+    last_move_time=1
+    current_time = pygame.time.get_ticks()  
+    if current_time - last_move_time >= mouseinterval:  
+        last_move_time = current_time  
+        move_magnet(2,0.1,0)
+        # Move the first magnet as an example (you can modify this) 
+        move_magnet(1, 0.1, 0) 
+        move_magnet(3,0.1,0) 
+          
+
+
+    screen.fill((128, 0, 128))  
+    draw_gaps()  
+    draw_magnets()  
+    move_magnet(0,0,0.1)
+    #move_magnet(2,0.1,0)
+    
+   # move_magnet(1,0,0.1)
+    pygame.display.flip()  
+
+pygame.quit() 
